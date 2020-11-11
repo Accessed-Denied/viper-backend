@@ -12,18 +12,36 @@ func routes(_ app: Application) throws {
         return "Welcome \(team) to vapor world"
     }
 
-    app.on(.POST, "user","login") { req -> User in
-        let user = try req.content.decode(User.self)
-        print(user)
-        return User(email: user.email,status: "\(user.email!)) logged in successfully!",code:100)
+    //REGISTER
+    app.post("users") { req -> EventLoopFuture<User> in
+        try User.Create.validate(content: req)
+        let create = try req.content.decode(User.Create.self)
+        guard create.password == create.confirmPassword else {
+            throw Abort(.badRequest, reason: "Passwords did not match")
+        }
+        let user = try User(
+            name: create.name,
+            email: create.email,
+            passwordHash: Bcrypt.hash(create.password)
+        )
+        return user.save(on: req.db)
+            .map { user }
     }
-
     
+    
+    //LOGIN
+    let passwordProtected = app.grouped(User.authenticator())
+    passwordProtected.post("login") { req -> EventLoopFuture<UserToken> in
+        let user = try req.auth.require(User.self)
+        let token = try user.generateToken()
+        return token.save(on: req.db)
+            .map { token }
+    }
+    
+    //Authenticated User
+    let tokenProtected = app.grouped(UserToken.authenticator())
+    tokenProtected.get("me") { req -> User in
+        try req.auth.require(User.self)
+    }
 }
 
-struct User: Content {
-    var email: String?
-    var password: String?
-    var status:String?
-    var code: Int?
-}
