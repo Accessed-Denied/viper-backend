@@ -41,11 +41,28 @@ extension User {
         var password: String
         var confirmPassword: String
     }
+    struct LoginUser:Content{
+        var name: String
+        var email: String
+        var id:String
+        var accessToken:String
+    }
+    struct LoginRequest:Content {
+        var email: String
+        var password: String
+    }
 }
 
 extension User.Create: Validatable {
     static func validations(_ validations: inout Validations) {
         validations.add("name", as: String.self, is: !.empty)
+        validations.add("email", as: String.self, is: .email)
+        validations.add("password", as: String.self, is: .count(8...))
+    }
+}
+
+extension User.LoginRequest: Validatable {
+    static func validations(_ validations: inout Validations) {
         validations.add("email", as: String.self, is: .email)
         validations.add("password", as: String.self, is: .count(8...))
     }

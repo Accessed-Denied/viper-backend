@@ -1,4 +1,6 @@
 import Vapor
+import FluentKit
+import FluentMongoDriver
 
 func routes(_ app: Application) throws {
     app.get { req in
@@ -30,18 +32,13 @@ func routes(_ app: Application) throws {
     
     
     //LOGIN
-    let passwordProtected = app.grouped(User.authenticator())
-    passwordProtected.post("login") { req -> EventLoopFuture<UserToken> in
-        let user = try req.auth.require(User.self)
-        let token = try user.generateToken()
-        return token.save(on: req.db)
-            .map { token }
-    }
-    
-    //Authenticated User
-    let tokenProtected = app.grouped(UserToken.authenticator())
-    tokenProtected.get("me") { req -> User in
-        try req.auth.require(User.self)
-    }
+    app.post("login") { req -> EventLoopFuture<[User]> in
+        try User.LoginRequest.validate(content: req)
+        let request = try req.content.decode(User.LoginRequest.self)
+        return User.query(on: req.db)
+            .filter(\.$email == request.email).all()
+        }
 }
+
+
 
