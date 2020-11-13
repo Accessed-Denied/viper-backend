@@ -16,6 +16,7 @@ extension User {
                 .id()
                 .field("name", .string, .required)
                 .field("email", .string, .required)
+                .field("accessToken",.string)
                 .field("password_hash", .string, .required)
                 .create()
         }

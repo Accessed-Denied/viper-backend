@@ -32,13 +32,30 @@ func routes(_ app: Application) throws {
     
     
     //LOGIN
-    app.post("login") { req -> EventLoopFuture<[User]> in
+    app.post("login") { req -> EventLoopFuture<User.LoginUser> in
         try User.LoginRequest.validate(content: req)
         let request = try req.content.decode(User.LoginRequest.self)
-        return User.query(on: req.db)
-            .filter(\.$email == request.email).all()
+        let requestUser = User.query(on: req.db)
+            .filter(\.$email == request.email).first().unwrap(or: Abort(.notFound))
+        return requestUser.map{ user in
+            do{
+                guard let userId = user.id else{
+                    throw Abort(.badRequest, reason: "User Not Found")
+                }
+                if try user.verify(password: request.password) == true{
+                    return User.LoginUser(name: user.name, email: user.email, id: "\(userId)", accessToken: try user.generateToken().value)
+                }
+                else{
+                    throw Abort(.badRequest, reason: "Wrong password")
+                }
+            }
+            catch {
+                return User.LoginUser(message: "User Not Found")
+            }
         }
+    }
+    
+        
 }
-
 
 

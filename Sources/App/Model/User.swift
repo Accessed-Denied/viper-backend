@@ -42,10 +42,11 @@ extension User {
         var confirmPassword: String
     }
     struct LoginUser:Content{
-        var name: String
-        var email: String
-        var id:String
-        var accessToken:String
+        var name: String? = nil
+        var email: String? = nil
+        var id:String? = nil
+        var accessToken:String? = nil
+        var message: String? = nil
     }
     struct LoginRequest:Content {
         var email: String
