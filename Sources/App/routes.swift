@@ -49,8 +49,8 @@ func routes(_ app: Application) throws {
                     throw Abort(.badRequest, reason: "Wrong password")
                 }
             }
-            catch {
-                return User.LoginUser(message: "User Not Found")
+            catch let error{
+                return User.LoginUser(message: error.localizedDescription)
             }
         }
     }
